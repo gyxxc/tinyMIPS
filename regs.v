@@ -1,3 +1,4 @@
+`include "macro.v"
 module regs(
 	input wire	clk,
 	input wire	rst_n,
@@ -14,17 +15,17 @@ module regs(
 	input wire[`RegAddrBus]	raddr2,
 	output reg[`RegBus]		rdata2
 );
-
+//32*32-bit registers
 reg[`RegBus] regis[0:`RegNum-1];
-
+//writing ops
 always @(posedge clk) begin
 	if(rst_n==`RstDisable) begin
 		if((we==`WriteEnable) && (waddr!=`RegNumLog2'h0))
 			regis[waddr] <= wdata;
 	end
 end
-
-always @(posedge clk) begin
+//reading ops on port1
+always @(*) begin
 	if(rst_n==`RstDisable) begin
 		rdata1 <= `ZeroWord;
 	end
@@ -40,8 +41,8 @@ always @(posedge clk) begin
 	else
 		rdata1 <= `ZeroWord;
 end
-
-always @(posedge clk) begin
+//reading port2
+always @(*) begin
 	if(rst_n==`RstDisable) begin
 		rdata2 <= `ZeroWord;
 	end
@@ -57,4 +58,5 @@ always @(posedge clk) begin
 	else
 		rdata2 <= `ZeroWord;
 end
+//
 endmodule
