@@ -84,18 +84,22 @@
 `define EXE_BLTZAL_OP	8'b01001010
 `define EXE_BNE_OP		8'b01010010
 
-`define EXE_LB_OP			6'b100000
-`define EXE_LBU_OP		6'b100100
-`define EXE_LH_OP			6'b100001
-`define EXE_LHU_OP		6'b100101
-`define EXE_LW_OP				6'b100011
-`define EXE_LWL_OP			6'b100010
-`define EXE_LWR_OP			6'b100110
-`define EXE_SB_OP				6'b101000
-`define EXE_SH_OP				6'b101001
-`define EXE_SW_OP				6'b101011
-`define EXE_SWL_OP			6'b101010
-`define EXE_SWR_OP			6'b101110//TOBE CONTINUE
+`define EXE_LB_OP			8'b11100000
+`define EXE_LBU_OP		8'b11100100
+`define EXE_LH_OP			8'b11100001
+`define EXE_LHU_OP		8'b11100101
+`define EXE_LW_OP			8'b11100011
+`define EXE_LWL_OP		8'b11100010
+`define EXE_LWR_OP		8'b11100110
+`define EXE_SB_OP			8'b11101000
+`define EXE_SH_OP			8'b11101001
+`define EXE_SW_OP			8'b11101011
+`define EXE_SWL_OP		8'b11101010
+`define EXE_SWR_OP		8'b11101110//
+
+
+`define EXE_LL_OP			8'b11110000
+`define EXE_SC_OP			8'b11111000//TOBE CONTINUE
 //AluSel
 `define EXE_RES_LOGIC			3'b001
 `define EXE_RES_SHIFT			3'b010
@@ -180,6 +184,9 @@
 `define EXE_BLTZAL		5'b10000
 `define EXE_BNE			6'b000101
 
+`define EXE_LL				6'b110000
+`define EXE_SC				6'b111000
+
 `define EXE_SPECIAL_INST	6'b000000
 `define EXE_REGIMM_INST		6'b000001
 `define EXE_SPECIAL2_INST	6'b011100
@@ -188,6 +195,10 @@
 `define InstMemNum		131071
 `define InstMemNumLog2	17
 //
+`define DataAddrBus		31:0
+`define DataBus			31:0
+`define DataMemNum		131071
+`define DataMemNumLog2	17
 `define RegAddrBus		4:0
 `define RegBus				31:0
 `define RegWidth			32
@@ -195,4 +206,6 @@
 `define DoubleRegBus		63:0
 `define RegNum				32
 `define RegNumLog2		5
+
+`define ByteWidth			7:0
 `define NOPRegAddr		5'b00000

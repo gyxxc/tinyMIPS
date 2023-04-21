@@ -135,7 +135,8 @@ module openmips(
 		.rst_n		(rst_n),
 		.pc_i			(id_pc_i),
 		.inst_i		(id_inst_i),
-		.ex_aluop_i	(ex_aluop_o),
+		.ex_aluop_i	(ex_aluop_o),//load
+		
 		.reg1_data_i(reg1_data),
 		.reg2_data_i(reg2_data),
 		//
@@ -165,7 +166,8 @@ module openmips(
 		.reg1_o		(id_reg1_o),
 		.reg2_o		(id_reg2_o),
 		.wd_o			(id_wd_o),
-		.wreg_o		(id_wreg_o)
+		.wreg_o		(id_wreg_o),
+		.stallreq	(stallreq_from_id)
 		//
 	);
 	//
@@ -241,7 +243,8 @@ module openmips(
 		.wdata_o		(ex_wdata_o),
 		//
 		.is_in_delayslot_i	(ex_is_in_delayslot_i),
-		.link_address_i		(ex_link_address_i)
+		.link_address_i		(ex_link_address_i),
+		.stallreq	(stallreq_from_ex)
 	);
 	//
 	ex_mem	ex_mem0(
@@ -266,8 +269,23 @@ module openmips(
 		.mem_whilo	(mem_whilo_i)
 	);
 	mem mem0(
+		.rst_n		(rst_n),
+		.wreg_i		(mem_wreg_i),
+		.wd_i			(mem_wd_i),
+		.wdata_i		(mem_wdata_i),
+		
+		.hi_i			(mem_hi_i),
+		.lo_i			(mem_lo_i),
+		.whilo_i		(mem_whilo_i),
 		.mem_data_i	(ram_data_i),
 		//
+		.wd_o			(mem_wd_o),
+		.wreg_o		(mem_wreg_o),
+		.wdata_o		(mem_wdata_o),
+		
+		.hi_o			(mem_hi_o),
+		.lo_o			(mem_lo_o),
+		.whilo_o		(mem_whilo_o),
 		.mem_addr_o	(ram_addr_o),
 		.mem_we_o	(ram_we_o),
 		.mem_sel_o	(ram_sel_o),

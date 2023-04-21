@@ -14,7 +14,8 @@ module id(
 	input wire[`RegBus]			mem_wdata_i,
 	input wire[`RegAddrBus]		mem_wd_i,
 	//
-	input wire				is_in_delayslot_i,
+	input wire					is_in_delayslot_i,
+	input wire[`AluOpBus]	ex_aluop_i,
 	//
 	output reg				next_inst_in_delayslot_o,
 	output reg				branch_flag_o,
@@ -33,7 +34,8 @@ module id(
 	output reg[`RegAddrBus]		wd_o,
 	output reg						wreg_o,
 	//
-	output wire[`RegBus]			inst_o
+	output wire[`RegBus]			inst_o,
+	output wire	stallreq
 );
 
 //wires
@@ -45,14 +47,29 @@ wire[4:0] op4 	= inst_i[20:16];
 wire[`RegBus]	pc_plus_8;
 wire[`RegBus]	pc_plus_4;
 wire[`RegBus]	imm_sll2_signedext;
+
+wire	pre_inst_is_load;
 //registers
 reg[`RegBus]	imm;
 reg				instvalid;
+
+reg	stallreq_for_reg1_loadrelate;
+reg	stallreq_for_reg2_loadrelate;
 
 assign pc_plus_8=pc_i+8;
 assign pc_plus_4=pc_i+4;
 
 assign imm_sll2_signedext={{14{inst_i[15]}},inst_i[15:0],2'b00};
+
+assign pre_inst_is_load=((ex_aluop_i==`EXE_LB_OP)||
+								(ex_aluop_i==`EXE_LBU_OP)||
+								(ex_aluop_i==`EXE_LH_OP)||
+								(ex_aluop_i==`EXE_LHU_OP)||
+								(ex_aluop_i==`EXE_LW_OP)||
+								(ex_aluop_i==`EXE_LWR_OP)||
+								(ex_aluop_i==`EXE_LWL_OP)||
+								(ex_aluop_i==`EXE_LL_OP)||
+								(ex_aluop_i==`EXE_SC_OP)) ? 1'b1 : 1'b0;
 
 always @(*) begin
 	if(rst_n==`RstEnable) begin
@@ -87,6 +104,24 @@ always @(*) begin
 		branch_flag_o	<=`NotBranch;
 		next_inst_in_delayslot_o<=`NotInDelaySlot;
 		case(op)
+			`EXE_LL: begin
+				wreg_o	<=`WriteEnable;
+				aluop_o	<=`EXE_LL_OP;
+				alusel_o	<=`EXE_RES_LOAD_STORE;
+				reg1_read_o	<=1'b1;
+				reg2_read_o	<=1'b0;
+				wd_o			<=inst_i[20:16];
+				instvalid	<=`InstValid;
+			end
+			`EXE_SC: begin
+				wreg_o	<=`WriteEnable;
+				aluop_o	<=`EXE_SC_OP;
+				alusel_o	<=`EXE_RES_LOAD_STORE;
+				reg1_read_o	<=1'b1;
+				reg2_read_o	<=1'b1;
+				wd_o			<=inst_i[20:16];
+				instvalid	<=`InstValid;
+			end
 			`EXE_LB: begin
 								wreg_o		<=`WriteEnable;
 								aluop_o		<=`EXE_LB_OP;
@@ -776,8 +811,11 @@ end
 //
 
 always @(*) begin
+stallreq_for_reg1_loadrelate<=`NoStop;
 if(rst_n==`RstEnable)
 	reg1_o	<= `ZeroWord;
+else if(pre_inst_is_load==1'b1 && ex_wd_i==reg1_addr_o && reg1_read_o==1'b1)
+	stallreq_for_reg1_loadrelate<=`Stop;
 else if((reg1_read_o==1'b1) && (ex_wreg_i==1'b1) && (ex_wd_i==reg1_addr_o))
 	reg1_o	<=ex_wdata_i;
 else if((reg1_read_o==1'b1) && (mem_wreg_i==1'b1) && (mem_wd_i==reg1_addr_o))
@@ -791,8 +829,11 @@ else
 end
 //
 always @(*) begin
+stallreq_for_reg2_loadrelate<=`NoStop;
 if(rst_n==`RstEnable)
 	reg2_o	<= `ZeroWord;
+else if(pre_inst_is_load==1'b1 && ex_wd_i==reg2_addr_o && reg2_read_o==1'b1)
+	stallreq_for_reg2_loadrelate<=`Stop;
 else if((reg2_read_o==1'b1) && (ex_wreg_i==1'b1) && (ex_wd_i==reg2_addr_o))
 	reg2_o	<=ex_wdata_i;
 else if((reg2_read_o==1'b1) && (mem_wreg_i==1'b1) && (mem_wd_i==reg2_addr_o))
@@ -812,4 +853,6 @@ always @(*) begin
 		is_in_delayslot_o	<=is_in_delayslot_i;
 	end
 end
+
+assign stallreq=stallreq_for_reg1_loadrelate | stallreq_for_reg2_loadrelate;
 endmodule
