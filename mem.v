@@ -20,6 +20,17 @@ module mem(
 	input wire	wb_LLbit_we_i,
 	input wire	wb_LLbit_value_i,
 	
+	input wire				cp0_reg_we_i,
+	input wire[4:0]		cp0_reg_write_addr_i,
+	input wire[`RegBus]	cp0_reg_data_i,
+	
+	input wire[`RegBus]	cp0_status_i,
+	input wire[`RegBus]	cp0_cause_i,
+	input wire[`RegBus]	cp0_epc_i,
+	
+	input wire			wb_cp0_reg_we,
+	input wire[4:0]	wb_cp0_reg_write_addr,
+	input wire[`RegBus]	wb_cp0_reg_data,
 	//
 	output reg					whilo_o,
 	output reg[`RegBus]		hi_o,
@@ -34,7 +45,12 @@ module mem(
 	output reg					mem_ce_o,
 	
 	output reg	LLbit_we_o,
-	output reg	LLbit_value_o
+	output reg	LLbit_value_o,
+	
+	output reg				cp0_reg_we_o,
+	output reg[4:0]		cp0_reg_write_addr_o,
+	output reg[`RegBus]	cp0_reg_data_o
+	//output wire		
 );
 
 //wires
@@ -42,6 +58,9 @@ wire[`RegBus]	zero32;
 //registers
 reg	mem_we;
 reg	LLbit;
+reg[`RegBus]	cp0_status;
+reg[`RegBus]	cp0_cause;
+reg[`RegBus]	cp0_epc;
 
 assign mem_we_o = mem_we;
 assign zero32 =	`ZeroWord;
@@ -73,6 +92,9 @@ always @(*) begin
 		mem_ce_o		<= `ChipDisable;
 		LLbit_we_o	<=1'b0;
 		LLbit_value_o<=1'b0;
+		cp0_reg_we_o<=`WriteDisable;
+		cp0_reg_write_addr_o<=5'b00000;
+		cp0_reg_data_o<=`ZeroWord;
 	end
 	else begin
 		wd_o			<= wd_i;
@@ -89,6 +111,9 @@ always @(*) begin
 		LLbit_value_o<=1'b0;
 		mem_ce_o		<=`ChipDisable;
 		mem_we		<=`WriteDisable;
+		cp0_reg_we_o<=cp0_reg_we_i;
+		cp0_reg_write_addr_o<=cp0_reg_write_addr_i;
+		cp0_reg_data_o<=cp0_reg_data_i;
 		case(aluop_i)
 			`EXE_LL_OP: begin
 				mem_addr_o	<= mem_addr_i;

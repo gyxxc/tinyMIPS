@@ -1,15 +1,15 @@
-`define RstEnable		1'b1
-`define RstDisable	1'b0
+`define RstEnable			1'b1
+`define RstDisable		1'b0
 `define ZeroWord		32'h00000000
-`define WriteEnable	1'b1
-`define WriteDisable	1'b0
-`define ReadEnable	1'b1
-`define ReadDisable	1'b0
-`define Stop			1'b1
-`define NoStop			1'b0
-`define Branch			1'b1//TRANS
-`define NotBranch		1'b0//NO TRANS
-`define InDelaySlot	1'b1
+`define WriteEnable		1'b1
+`define WriteDisable		1'b0
+`define ReadEnable		1'b1
+`define ReadDisable		1'b0
+`define Stop				1'b1
+`define NoStop				1'b0
+`define Branch				1'b1//TRANS
+`define NotBranch			1'b0//NO TRANS
+`define InDelaySlot		1'b1
 `define NotInDelaySlot	1'b0
 //
 `define AluOpBus		7:0
@@ -20,6 +20,8 @@
 `define false			1'b0
 `define ChipEnable	1'b1
 `define ChipDisable	1'b0
+`define InterruptAssert		1'b1
+`define InterruptNotAssert	1'b0
 //
 
 `define EXE_NOP			6'b000000
@@ -100,6 +102,9 @@
 
 `define EXE_LL_OP			8'b11110000
 `define EXE_SC_OP			8'b11111000//TOBE CONTINUE
+
+`define EXE_MFC0_OP			8'b01011101
+`define EXE_MTC0_OP			8'b01100000
 //AluSel
 `define EXE_RES_LOGIC			3'b001
 `define EXE_RES_SHIFT			3'b010
@@ -186,6 +191,14 @@
 
 `define EXE_LL				6'b110000
 `define EXE_SC				6'b111000
+
+`define CP0_REG_COUNT	5'b01001
+`define CP0_REG_COMPARE	5'b01011
+`define CP0_REG_STATUS	5'b01100
+`define CP0_REG_CAUSE	5'b01101
+`define CP0_REG_EPC		5'b01110
+`define CP0_REG_PRID		5'b01111
+`define CP0_REG_CONFIG	5'b10000
 
 `define EXE_SPECIAL_INST	6'b000000
 `define EXE_REGIMM_INST		6'b000001

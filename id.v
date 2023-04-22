@@ -805,6 +805,24 @@ always @(*) begin
 				wd_o			<=inst_i[15:11];				
 				instvalid	<=`InstValid;
 			end
+		end else if(inst_i[31:21]==11'b01000000000 && inst_i[10:0]==11'b00000000000) begin
+			wreg_o		<=`WriteEnable;
+			aluop_o		<=`EXE_MFC0_OP;
+			alusel_o		<=`EXE_RES_MOVE;
+			reg1_read_o	<=1'b0;
+			reg2_read_o	<=1'b0;
+			
+			wd_o			<=inst_i[20:16];				
+			instvalid	<=`InstValid;
+		end else if(inst_i[31:21]==11'b01000000100 && inst_i[10:0]==11'b00000000000) begin
+			wreg_o		<=`WriteDisable;
+			aluop_o		<=`EXE_MFC0_OP;
+			alusel_o		<=`EXE_RES_NOP;
+			reg1_read_o	<=1'b1;
+			reg1_addr_o	<=inst_i[20:16];
+			reg2_read_o	<=1'b0;
+						
+			instvalid	<=`InstValid;
 		end
 	end
 end
@@ -853,6 +871,7 @@ always @(*) begin
 		is_in_delayslot_o	<=is_in_delayslot_i;
 	end
 end
+//
 
 assign stallreq=stallreq_for_reg1_loadrelate | stallreq_for_reg2_loadrelate;
 endmodule
