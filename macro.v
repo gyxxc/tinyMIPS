@@ -9,24 +9,30 @@
 `define NoStop				1'b0
 `define Branch				1'b1//TRANS
 `define NotBranch			1'b0//NO TRANS
-`define InDelaySlot		1'b1
-`define NotInDelaySlot	1'b0
+
 //
 `define AluOpBus		7:0
 `define AluSelBus		2:0
-`define InstValid		1'b0
-`define InstInvalid	1'b1
-`define true			1'b1
-`define false			1'b0
+
+`define True			1'b1
+`define False			1'b0
+
 `define ChipEnable	1'b1
 `define ChipDisable	1'b0
+
+`define InstValid				1'b0
+`define InstInvalid			1'b1
+`define InDelaySlot			1'b1
+`define NotInDelaySlot		1'b0
 `define InterruptAssert		1'b1
 `define InterruptNotAssert	1'b0
+`define TrapAssert			1'b1
+`define TrapNotAssert		1'b0
 //
 
 `define EXE_NOP			6'b000000
 //AluOp
-`define EXE_NOP_OP		8'b00000000
+`define EXE_NOP_OP		8'b00000000//
 
 `define EXE_AND_OP		8'b00100100
 `define EXE_OR_OP			8'b00100101
@@ -68,10 +74,10 @@
 `define EXE_MULTU_OP		8'b00011001
 `define EXE_MUL_OP		8'b10101001
 
-`define EXE_MADD_OP		8'b00000000
-`define EXE_MADDU_OP		8'b00000001
-`define EXE_MSUB_OP		8'b00000100
-`define EXE_MSUBU_OP		8'b00000101//
+`define EXE_MADD_OP		8'b10100110//
+`define EXE_MADDU_OP		8'b10101000
+`define EXE_MSUB_OP		8'b10101010
+`define EXE_MSUBU_OP		8'b10101011//
 
 `define EXE_J_OP			8'b01001111
 `define EXE_JAL_OP		8'b01010000
@@ -105,6 +111,23 @@
 
 `define EXE_MFC0_OP			8'b01011101
 `define EXE_MTC0_OP			8'b01100000
+
+
+`define EXE_TEQ_OP		8'b00110100
+`define EXE_TEQI_OP		8'b01001000
+`define EXE_TGE_OP		8'b00110000
+`define EXE_TGEI_OP		8'b01000100
+`define EXE_TGEIU_OP		8'b01000101
+`define EXE_TGEU_OP		8'b00110001
+`define EXE_TLT_OP		8'b00110010
+`define EXE_TLTI_OP		8'b01000110
+`define EXE_TLTIU_OP		8'b01000111
+`define EXE_TLTU_OP		8'b00110011
+`define EXE_TNE_OP		8'b00110110
+`define EXE_TNEI_OP		8'b01001001
+
+`define EXE_ERET_OP		8'b01101011
+`define EXE_SYSCALL_OP	8'b00001100
 //AluSel
 `define EXE_RES_LOGIC			3'b001
 `define EXE_RES_SHIFT			3'b010
@@ -198,7 +221,23 @@
 `define CP0_REG_CAUSE	5'b01101
 `define CP0_REG_EPC		5'b01110
 `define CP0_REG_PRID		5'b01111
-`define CP0_REG_CONFIG	5'b10000
+`define CP0_REG_CONFIG	5'b10000//COPROCESSOR0
+
+`define EXE_TEQ		6'b110100
+`define EXE_TEQI		5'b01100
+`define EXE_TGE		6'b110000
+`define EXE_TGEI		5'b01000
+`define EXE_TGEIU		5'b01001
+`define EXE_TGEU		6'b110001
+`define EXE_TLT		6'b110010
+`define EXE_TLTI		5'b01010
+`define EXE_TLTIU		5'b01011
+`define EXE_TLTU		6'b110011
+`define EXE_TNE		6'b110110
+`define EXE_TNEI		5'b01110
+
+`define EXE_SYSCALL		6'b001100
+`define EXE_ERET			32'b01000010000000000000000000011000
 
 `define EXE_SPECIAL_INST	6'b000000
 `define EXE_REGIMM_INST		6'b000001

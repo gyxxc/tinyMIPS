@@ -3,6 +3,7 @@ module ex_mem(
 input wire			clk,
 input wire			rst_n,
 input wire[5:0]	stall,
+input wire flush,
 //
 input wire[`RegAddrBus]	ex_wd,
 input wire					ex_wreg,
@@ -22,6 +23,10 @@ input wire				ex_cp0_reg_we,
 input wire[4:0]		ex_cp0_reg_write_addr,
 input wire[`RegBus]	ex_cp0_reg_data,
 
+input wire[31:0]		ex_excepttype,
+input wire				ex_is_in_delayslot,
+input wire[`RegBus]	ex_current_inst_address,
+
 output reg[`DoubleRegBus]		hilo_o,
 output reg[1:0]	cnt_o,
 output reg					mem_whilo,
@@ -37,7 +42,11 @@ output reg[`RegBus]		mem_reg2,
 
 output reg				mem_cp0_reg_we,
 output reg[4:0]		mem_cp0_reg_write_addr,
-output reg[`RegBus]	mem_cp0_reg_data
+output reg[`RegBus]	mem_cp0_reg_data,
+
+output reg[31:0]		mem_excepttype,
+output reg				mem_is_in_delayslot,
+output reg[`RegBus]	mem_current_inst_address
 );
 
 always @(posedge clk) begin
@@ -57,6 +66,32 @@ always @(posedge clk) begin
 		mem_cp0_reg_we<=`WriteDisable;
 		mem_cp0_reg_write_addr<=5'b00000;
 		mem_cp0_reg_data<=`ZeroWord;
+		
+		mem_excepttype	<=`ZeroWord;
+		mem_is_in_delayslot<=`NotInDelaySlot;
+		mem_current_inst_address<=`ZeroWord;
+	end
+	else if(flush==1'b1) begin
+		mem_wd 	<=	`NOPRegAddr;
+		mem_wreg	<= `WriteDisable;
+		mem_wdata<= `ZeroWord;
+		mem_hi	<=`ZeroWord;
+		mem_lo	<=`ZeroWord;
+		mem_whilo<=`WriteDisable;
+
+		mem_aluop<=`EXE_NOP_OP;
+		mem_mem_addr<=`ZeroWord;
+		mem_reg2		<=`ZeroWord;
+		
+		mem_cp0_reg_we<=`WriteDisable;
+		mem_cp0_reg_write_addr<=5'b00000;
+		mem_cp0_reg_data<=`ZeroWord;
+		
+		mem_excepttype	<=`ZeroWord;
+		mem_is_in_delayslot<=`NotInDelaySlot;
+		mem_current_inst_address<=`ZeroWord;
+		hilo_o	<={`ZeroWord,`ZeroWord};
+		cnt_o		<=2'b00;
 	end
 	else if(stall[3] == `Stop && stall[4]==`NoStop) begin
 		mem_wd 	<=	`NOPRegAddr;
@@ -74,6 +109,10 @@ always @(posedge clk) begin
 		mem_cp0_reg_we<=`WriteDisable;
 		mem_cp0_reg_write_addr<=5'b00000;
 		mem_cp0_reg_data<=`ZeroWord;
+		
+		mem_excepttype	<=`ZeroWord;
+		mem_is_in_delayslot<=`NotInDelaySlot;
+		mem_current_inst_address<=`ZeroWord;
 	end
 	else if(stall[3]==`NoStop) begin
 		mem_wd	<= ex_wd;
@@ -91,6 +130,10 @@ always @(posedge clk) begin
 		mem_cp0_reg_we<=ex_cp0_reg_we;
 		mem_cp0_reg_write_addr<=ex_cp0_reg_write_addr;
 		mem_cp0_reg_data<=ex_cp0_reg_data;
+		
+		mem_excepttype	<=ex_excepttype;
+		mem_is_in_delayslot<=ex_is_in_delayslot;
+		mem_current_inst_address<=ex_current_inst_address;
 	end
 	else begin
 		hilo_o	<=hilo_i;

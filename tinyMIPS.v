@@ -14,8 +14,12 @@ wire[`RegBus]	mem_addr_i;
 wire[`RegBus]	mem_data_i;
 wire[`RegBus]	mem_data_o;
 wire[3:0]		mem_sel_i;
+
+wire[5:0] int;
+wire timer_int;
 wire	mem_ce_i;
 
+assign int={5'b00000,timer_int};
 //openmips
 openmips openmips0(
 	.clk			(clk),
@@ -27,7 +31,9 @@ openmips openmips0(
 	.ram_data_o		(mem_data_i),
 	.ram_sel_o		(mem_sel_i),
 	.ram_we_o		(mem_we_i),
-	.ram_ce_o		(mem_ce_i)
+	.ram_ce_o		(mem_ce_i),
+	.int_i			(int),
+	.timer_int_o	(timer_int)
 );
 //roms
 inst_rom inst_rom0(

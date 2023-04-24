@@ -35,7 +35,13 @@ input wire				wb_cp0_reg_we,
 input wire[4:0]		wb_cp0_reg_write_addr,
 input wire[`RegBus]	wb_cp0_reg_data,
 
+input wire[31:0]		excepttype_i,
+input wire[`RegBus]	current_inst_address_i,
 //
+output wire[31:0]		excepttype_o,
+output wire[`RegBus]	current_inst_address_o,
+output wire				is_in_delayslot_o,
+
 output reg[4:0]		cp0_reg_read_addr_o,
 output reg				cp0_reg_we_o,
 output reg[4:0]		cp0_reg_write_addr_o,
@@ -78,24 +84,73 @@ reg[`RegBus]			LO;
 reg[`RegBus]			arithmeticres;
 reg[`DoubleRegBus]	mulres;//64-bit register holding the result of multiplication
 
+reg trapassert;
+reg ovassert;
+
 //
 assign aluop_o=aluop_i;
 assign mem_addr_o=reg1_i+{{16{inst_i[15]}}, inst_i[15:0]};
 assign reg2_o=reg2_i;
+assign excepttype_o={excepttype_i[31:12],ovassert,trapassert,excepttype_i[9:8],8'h00};
+assign is_in_delayslot_o=is_in_delayslot_i;
+assign current_inst_address_o=current_inst_address_i;
 
-assign reg2_i_mux	=((aluop_i==`EXE_SUB_OP) ||
-							(aluop_i==`EXE_SUBU_OP) ||
-								(aluop_i==`EXE_SLT_OP)) ?
-									(~reg2_i)+1 : reg2_i;
+assign reg2_i_mux	=(
+(aluop_i==`EXE_SUB_OP)||
+(aluop_i==`EXE_SUBU_OP)||
+(aluop_i==`EXE_SLT_OP)||
+(aluop_i==`EXE_TLT_OP)||
+(aluop_i==`EXE_TLTI_OP)||
+(aluop_i==`EXE_TGE_OP)||
+(aluop_i==`EXE_TGEI_OP)
+) ? ~reg2_i+1 : reg2_i;
 
 assign result_sum	=reg1_i+reg2_i_mux;
 
-assign ov_sum	=((!reg1_i[31] && !reg2_i_mux[31]) && result_sum[31])
-						||((reg1_i[31] && reg2_i_mux[31]) && (!result_sum[31]));
+assign ov_sum	=((!reg1_i[31] && !reg2_i_mux[31]) && result_sum[31])||((reg1_i[31] && reg2_i_mux[31]) && (!result_sum[31]));
 
-assign reg1_lt_reg2 =(aluop_i==`EXE_SLT_OP) ?
-								((reg1_i[31] && !reg2_i[31]) ||(!reg1_i[31] && !reg2_i[31] && result_sum[31]) ||(reg1_i[31] &&reg2_i[31] &&result_sum[31]))
-									 :(reg1_i<reg2_i);
+assign reg1_lt_reg2 =(
+(aluop_i==`EXE_SLT_OP)||
+(aluop_i==`EXE_TLT_OP)||
+(aluop_i==`EXE_TLTI_OP)||
+(aluop_i==`EXE_TGE_OP)||
+(aluop_i==`EXE_TGEI_OP)
+) ? (
+(reg1_i[31] && !reg2_i[31])||
+(!reg1_i[31] && !reg2_i[31] && result_sum[31])||
+(reg1_i[31] &&reg2_i[31] &&result_sum[31])
+):(reg1_i<reg2_i);
+									 
+always @(*) begin
+	if(rst_n==`RstEnable)
+		trapassert<=`TrapNotAssert;
+	else begin
+		trapassert<=`TrapNotAssert;
+		case(aluop_i)
+		//
+		`EXE_TEQ_OP, `EXE_TEQI_OP: begin
+			if(reg1_i==reg2_i)
+				trapassert<=`TrapAssert;
+		end
+		`EXE_TGE_OP, `EXE_TGEI_OP, `EXE_TGEIU_OP, `EXE_TGEU_OP: begin
+			if(~reg1_lt_reg2)
+				trapassert<=`TrapAssert;
+		end
+		`EXE_TLT_OP, `EXE_TLTI_OP, `EXE_TLTIU_OP, `EXE_TLTU_OP: begin
+			if(reg1_lt_reg2)
+				trapassert<=`TrapAssert;
+		end
+		`EXE_TNE_OP, `EXE_TNEI_OP: begin
+			if(reg1_i!=reg2_i)
+				trapassert<=`TrapAssert;
+		end
+		
+		default: begin
+			trapassert<=`TrapNotAssert;
+		end
+		endcase
+	end
+end
 										
 assign reg1_i_not=~reg1_i;
 //arithmeticres
@@ -271,10 +326,13 @@ end//always
 //select the final calculation result
 always @(*) begin
 	wd_o	 <= wd_i;
-	if(((aluop_i==`EXE_ADD_OP)||(aluop_i==`EXE_ADDI_OP)||(aluop_i==`EXE_SUB_OP))&&(ov_sum==1'b1))
+	if(((aluop_i==`EXE_ADD_OP)||(aluop_i==`EXE_ADDI_OP)||(aluop_i==`EXE_SUB_OP))&&(ov_sum==1'b1)) begin
 		wreg_o<=`WriteDisable;
-	else
+		ovassert<=1'b1;
+	end else begin
 		wreg_o<=wreg_i;
+		ovassert<=1'b0;
+	end
 	/*
 		if overflow occurred while executing instruction ADD/ADDI/SUB/SUBI,
 		then we set wreg_o WriteDisable.

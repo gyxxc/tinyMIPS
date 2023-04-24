@@ -34,6 +34,9 @@ module id(
 	output reg[`RegAddrBus]		wd_o,
 	output reg						wreg_o,
 	//
+	output wire[31:0]				excepttype_o,
+	output wire[`RegBus]			current_inst_address_o,
+	
 	output wire[`RegBus]			inst_o,
 	output wire	stallreq
 );
@@ -56,8 +59,14 @@ reg				instvalid;
 reg	stallreq_for_reg1_loadrelate;
 reg	stallreq_for_reg2_loadrelate;
 
+reg excepttype_is_syscall;
+reg excepttype_is_eret;
+
 assign pc_plus_8=pc_i+8;
 assign pc_plus_4=pc_i+4;
+
+assign current_inst_address_o=pc_i;
+assign excepttype_o={19'b0,excepttype_is_eret,2'b0,instvalid,excepttype_is_syscall,8'b0};
 
 assign imm_sll2_signedext={{14{inst_i[15]}},inst_i[15:0],2'b00};
 
@@ -93,7 +102,7 @@ always @(*) begin
 		alusel_o	<=`EXE_RES_NOP;
 		wd_o		<=inst_i[15:11];
 		wreg_o		<=`WriteDisable;
-		instvalid	<=`InstValid;
+		//instvalid	<=`InstValid;
 		reg1_read_o	<=1'b0;
 		reg2_read_o	<=1'b0;
 		reg1_addr_o	<=inst_i[25:21];
@@ -103,6 +112,10 @@ always @(*) begin
 		branch_target_address_o<=`ZeroWord;
 		branch_flag_o	<=`NotBranch;
 		next_inst_in_delayslot_o<=`NotInDelaySlot;
+		
+		excepttype_is_eret	<=`False;
+		excepttype_is_syscall<=`False;//
+		instvalid				<=`InstInvalid;
 		case(op)
 			`EXE_LL: begin
 				wreg_o	<=`WriteEnable;
@@ -234,8 +247,66 @@ always @(*) begin
 				case(op2)
 					5'b00000: begin
 						case(op3)
+							//exception
 							//jump-branch
 							//arithmetic
+							`EXE_TEQ: begin
+								wreg_o		<=`WriteDisable;
+								aluop_o		<=`EXE_SYSCALL_OP;
+								alusel_o		<=`EXE_RES_NOP;
+								reg1_read_o	<=1'b0;
+								reg2_read_o	<=1'b0;
+								instvalid	<=`InstValid;
+							end
+							`EXE_TGE: begin
+								wreg_o		<=`WriteDisable;
+								aluop_o		<=`EXE_TGE_OP;
+								alusel_o		<=`EXE_RES_NOP;
+								reg1_read_o	<=1'b1;
+								reg2_read_o	<=1'b1;
+								instvalid	<=`InstValid;
+							end
+							`EXE_TGEU: begin
+								wreg_o		<=`WriteDisable;
+								aluop_o		<=`EXE_TGEU_OP;
+								alusel_o		<=`EXE_RES_NOP;
+								reg1_read_o	<=1'b1;
+								reg2_read_o	<=1'b1;
+								instvalid	<=`InstValid;
+							end
+							`EXE_TLT: begin
+								wreg_o		<=`WriteDisable;
+								aluop_o		<=`EXE_TLT_OP;
+								alusel_o		<=`EXE_RES_NOP;
+								reg1_read_o	<=1'b1;
+								reg2_read_o	<=1'b1;
+								instvalid	<=`InstValid;
+							end
+							`EXE_TLTU: begin
+								wreg_o		<=`WriteDisable;
+								aluop_o		<=`EXE_TLTU_OP;
+								alusel_o		<=`EXE_RES_NOP;
+								reg1_read_o	<=1'b1;
+								reg2_read_o	<=1'b1;
+								instvalid	<=`InstValid;
+							end
+							`EXE_TNE: begin
+								wreg_o		<=`WriteDisable;
+								aluop_o		<=`EXE_TNE_OP;
+								alusel_o		<=`EXE_RES_NOP;
+								reg1_read_o	<=1'b1;
+								reg2_read_o	<=1'b1;
+								instvalid	<=`InstValid;
+							end
+							`EXE_SYSCALL: begin
+								wreg_o		<=`WriteDisable;
+								aluop_o		<=`EXE_SYSCALL_OP;
+								alusel_o		<=`EXE_RES_NOP;
+								reg1_read_o	<=1'b0;
+								reg2_read_o	<=1'b0;
+								instvalid	<=`InstValid;
+								excepttype_is_syscall	<=`True;
+							end
 							`EXE_JR:	begin
 								wreg_o		<=`WriteDisable;
 								aluop_o		<=`EXE_JR_OP;
@@ -591,6 +662,67 @@ always @(*) begin
 			end
 			`EXE_REGIMM_INST: begin
 				case(op4)
+					//exception
+					`EXE_TEQI: begin
+						wreg_o		<=`WriteDisable;
+						aluop_o		<=`EXE_TEQI_OP;
+						alusel_o		<=`EXE_RES_NOP;
+						reg1_read_o	<=1'b1;
+						reg2_read_o	<=1'b0;
+						imm			<={{16{inst_i[15]}}, inst_i[15:0]};
+						
+						instvalid	<=`InstValid;
+					end
+					`EXE_TGEI: begin
+						wreg_o		<=`WriteDisable;
+						aluop_o		<=`EXE_TGEI_OP;
+						alusel_o		<=`EXE_RES_NOP;
+						reg1_read_o	<=1'b1;
+						reg2_read_o	<=1'b0;
+						imm			<={{16{inst_i[15]}}, inst_i[15:0]};
+						
+						instvalid	<=`InstValid;
+					end
+					`EXE_TGEIU: begin
+						wreg_o		<=`WriteDisable;
+						aluop_o		<=`EXE_TGEIU_OP;
+						alusel_o		<=`EXE_RES_NOP;
+						reg1_read_o	<=1'b1;
+						reg2_read_o	<=1'b0;
+						imm			<={{16{inst_i[15]}}, inst_i[15:0]};
+						
+						instvalid	<=`InstValid;
+					end
+					`EXE_TLTI: begin
+						wreg_o		<=`WriteDisable;
+						aluop_o		<=`EXE_TLTI_OP;
+						alusel_o		<=`EXE_RES_NOP;
+						reg1_read_o	<=1'b1;
+						reg2_read_o	<=1'b0;
+						imm			<={{16{inst_i[15]}}, inst_i[15:0]};
+						
+						instvalid	<=`InstValid;
+					end
+					`EXE_TLTIU: begin
+						wreg_o		<=`WriteDisable;
+						aluop_o		<=`EXE_TEQI_OP;
+						alusel_o		<=`EXE_RES_NOP;
+						reg1_read_o	<=1'b1;
+						reg2_read_o	<=1'b0;
+						imm			<={{16{inst_i[15]}}, inst_i[15:0]};
+						
+						instvalid	<=`InstValid;
+					end
+					`EXE_TNEI: begin
+						wreg_o		<=`WriteDisable;
+						aluop_o		<=`EXE_TNEI_OP;
+						alusel_o		<=`EXE_RES_NOP;
+						reg1_read_o	<=1'b1;
+						reg2_read_o	<=1'b0;
+						imm			<={{16{inst_i[15]}}, inst_i[15:0]};
+						
+						instvalid	<=`InstValid;
+					end
 					`EXE_BGEZ: begin
 						wreg_o	<=`WriteDisable;
 						aluop_o	<=`EXE_BGEZ_OP;
@@ -774,9 +906,10 @@ always @(*) begin
 			end
 		endcase//case op
 		
+		
 		if(inst_i[31:21]==11'b00000000000) begin
 			if(op3==`EXE_SLL) begin
-				wreg_o		<=`WriteDisable;
+				wreg_o		<=`WriteEnable;//
 				aluop_o		<=`EXE_SLL_OP;
 				alusel_o		<=`EXE_RES_SHIFT;
 				reg1_read_o	<=1'b0;
@@ -786,7 +919,7 @@ always @(*) begin
 				instvalid	<=`InstValid;
 			end
 			else if(op3==`EXE_SRL) begin
-				wreg_o		<=`WriteDisable;
+				wreg_o		<=`WriteEnable;
 				aluop_o		<=`EXE_SRL_OP;
 				alusel_o		<=`EXE_RES_SHIFT;
 				reg1_read_o	<=1'b0;
@@ -796,7 +929,7 @@ always @(*) begin
 				instvalid	<=`InstValid;
 			end
 			else if(op3==`EXE_SRA) begin
-				wreg_o		<=`WriteDisable;
+				wreg_o		<=`WriteEnable;
 				aluop_o		<=`EXE_SRA_OP;
 				alusel_o		<=`EXE_RES_SHIFT;
 				reg1_read_o	<=1'b0;
@@ -805,6 +938,19 @@ always @(*) begin
 				wd_o			<=inst_i[15:11];				
 				instvalid	<=`InstValid;
 			end
+		end
+		
+		if(inst_i==`EXE_ERET) begin
+
+						wreg_o		<=`WriteDisable;
+						aluop_o		<=`EXE_ERET_OP;
+						alusel_o		<=`EXE_RES_NOP;
+						reg1_read_o	<=1'b0;
+						reg2_read_o	<=1'b0;
+						
+						instvalid	<=`InstValid;
+						excepttype_is_eret	<=`True;
+		
 		end else if(inst_i[31:21]==11'b01000000000 && inst_i[10:0]==11'b00000000000) begin
 			wreg_o		<=`WriteEnable;
 			aluop_o		<=`EXE_MFC0_OP;
@@ -816,7 +962,7 @@ always @(*) begin
 			instvalid	<=`InstValid;
 		end else if(inst_i[31:21]==11'b01000000100 && inst_i[10:0]==11'b00000000000) begin
 			wreg_o		<=`WriteDisable;
-			aluop_o		<=`EXE_MFC0_OP;
+			aluop_o		<=`EXE_MTC0_OP;
 			alusel_o		<=`EXE_RES_NOP;
 			reg1_read_o	<=1'b1;
 			reg1_addr_o	<=inst_i[20:16];
@@ -824,6 +970,7 @@ always @(*) begin
 						
 			instvalid	<=`InstValid;
 		end
+		
 	end
 end
 //
