@@ -20,7 +20,7 @@ output reg[`RegBus]	status_o,
 output reg[`RegBus]	cause_o,
 output reg[`RegBus]	epc_o,
 output reg[`RegBus]	config_o,
-output reg[`RegBus]	prid_o,
+//output reg[`RegBus]	prid_o,
 
 output reg	timer_int_o
 );
@@ -33,7 +33,7 @@ always @(posedge clk) begin
 		cause_o<=`ZeroWord;
 		epc_o<=`ZeroWord;
 		config_o<=32'b00000000000000001000000000000000;
-		//
+		//prid_o
 		timer_int_o<=`InterruptNotAssert;
 	end else begin
 		count_o<=count_o+1'b1;
@@ -158,9 +158,9 @@ always @(*) begin
 			`CP0_REG_EPC: begin
 				data_o<=epc_o;
 			end
-			`CP0_REG_PRID: begin
-				data_o<=prid_o;
-			end
+			//`CP0_REG_PRID: begin
+			//	data_o<=prid_o;
+			//end
 			`CP0_REG_CONFIG: begin
 				data_o<=config_o;
 			end

@@ -175,14 +175,14 @@ always @(*) begin
 		hi_o			<=hi_i;
 		lo_o			<=lo_i;
 		whilo_o		<=whilo_i;
-		mem_addr_o	<=`WriteDisable;
-		mem_we		<=`ZeroWord;
+		mem_addr_o	<=`ZeroWord;
+		mem_we		<=`WriteDisable;
 		mem_sel_o	<=4'b1111;
 		mem_ce_o		<= `ChipDisable;
 		LLbit_we_o	<=1'b0;
 		LLbit_value_o<=1'b0;
-		mem_ce_o		<=`ChipDisable;
-		mem_we		<=`WriteDisable;
+		
+		
 		cp0_reg_we_o<=cp0_reg_we_i;
 		cp0_reg_write_addr_o<=cp0_reg_write_addr_i;
 		cp0_reg_data_o<=cp0_reg_data_i;

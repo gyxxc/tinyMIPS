@@ -29,6 +29,18 @@
 `define TrapAssert			1'b1
 `define TrapNotAssert		1'b0
 //
+`define WB_IDLE				2'b00
+`define WB_BUSY				2'b01
+`define WB_WAIT_FOR_STALL	2'b11
+
+`define DivFree				2'b00
+`define DivByZero				2'b01
+`define DivOn					2'b10
+`define DivEnd					2'b11
+`define DivResultReady		1'b1
+`define DivResultNotReady	1'b0
+`define DivStart				1'b1
+`define DivStop				1'b0
 
 `define EXE_NOP			6'b000000
 //AluOp
@@ -72,7 +84,10 @@
 
 `define EXE_MULT_OP		8'b00011000
 `define EXE_MULTU_OP		8'b00011001
-`define EXE_MUL_OP		8'b10101001
+`define EXE_MUL_OP		8'b10101001//
+
+`define EXE_DIV_OP		8'b00011010
+`define EXE_DIVU_OP		8'b00011011
 
 `define EXE_MADD_OP		8'b10100110//
 `define EXE_MADDU_OP		8'b10101000
@@ -194,6 +209,9 @@
 `define EXE_MULTU			6'b011001
 `define EXE_MUL			6'b000010
 
+`define EXE_DIV			6'b011010
+`define EXE_DIVU			6'b011011
+
 `define EXE_MADD			6'b000000
 `define EXE_MADDU			6'b000001
 `define EXE_MSUB			6'b000100
@@ -220,7 +238,7 @@
 `define CP0_REG_STATUS	5'b01100
 `define CP0_REG_CAUSE	5'b01101
 `define CP0_REG_EPC		5'b01110
-`define CP0_REG_PRID		5'b01111
+//`define CP0_REG_PRID		5'b01111
 `define CP0_REG_CONFIG	5'b10000//COPROCESSOR0
 
 `define EXE_TEQ		6'b110100
@@ -261,3 +279,6 @@
 
 `define ByteWidth			7:0
 `define NOPRegAddr		5'b00000
+
+//`define GPIO_IOS		32
+//`define GPIO_LINES	32

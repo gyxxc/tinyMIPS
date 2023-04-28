@@ -37,7 +37,15 @@ input wire[`RegBus]	wb_cp0_reg_data,
 
 input wire[31:0]		excepttype_i,
 input wire[`RegBus]	current_inst_address_i,
+
+input wire[`DoubleRegBus]	div_result_i,
+input wire				div_ready_i,
 //
+output reg[`RegBus]	div_opdata1_o,
+output reg[`RegBus]	div_opdata2_o,
+output reg				div_start_o,
+output reg				signed_div_o,
+
 output wire[31:0]		excepttype_o,
 output wire[`RegBus]	current_inst_address_o,
 output wire				is_in_delayslot_o,
@@ -87,6 +95,7 @@ reg[`DoubleRegBus]	mulres;//64-bit register holding the result of multiplication
 reg trapassert;
 reg ovassert;
 
+reg stallreq_for_div;
 //
 assign aluop_o=aluop_i;
 assign mem_addr_o=reg1_i+{{16{inst_i[15]}}, inst_i[15:0]};
@@ -120,7 +129,69 @@ assign reg1_lt_reg2 =(
 (!reg1_i[31] && !reg2_i[31] && result_sum[31])||
 (reg1_i[31] &&reg2_i[31] &&result_sum[31])
 ):(reg1_i<reg2_i);
-									 
+
+always @(*) begin
+	if(rst_n==`RstEnable) begin
+		stallreq_for_div<=`NoStop;
+		div_opdata1_o	<=`ZeroWord;
+		div_opdata2_o	<=`ZeroWord;
+		div_start_o		<=`DivStop;
+		signed_div_o	<=1'b0;
+	end else begin
+		stallreq_for_div<=`NoStop;
+		div_opdata1_o	<=`ZeroWord;
+		div_opdata2_o	<=`ZeroWord;
+		div_start_o		<=`DivStop;
+		signed_div_o	<=1'b0;
+		case(aluop_i)
+		`EXE_DIV_OP: begin
+			if(div_ready_i==`DivResultNotReady) begin
+				div_opdata1_o<=reg1_i;
+				div_opdata2_o<=reg2_i;
+				div_start_o	<=`DivStart;
+				signed_div_o<=1'b1;
+				stallreq_for_div<=`Stop;
+			end else if(div_ready_i==`DivResultReady) begin
+				div_opdata1_o<=reg1_i;
+				div_opdata2_o<=reg2_i;
+				div_start_o	<=`DivStop;
+				signed_div_o<=1'b1;
+				stallreq_for_div<=`NoStop;
+			end else begin
+				div_opdata1_o<=`ZeroWord;
+				div_opdata2_o<=`ZeroWord;
+				div_start_o	<=`DivStop;
+				signed_div_o<=1'b0;
+				stallreq_for_div<=`NoStop;
+			end
+		end
+		`EXE_DIVU_OP: begin
+			if(div_ready_i==`DivResultNotReady) begin
+				div_opdata1_o<=reg1_i;
+				div_opdata2_o<=reg2_i;
+				div_start_o	<=`DivStart;
+				signed_div_o<=1'b0;
+				stallreq_for_div<=`Stop;
+			end else if(div_ready_i==`DivResultReady) begin
+				div_opdata1_o<=reg1_i;
+				div_opdata2_o<=reg2_i;
+				div_start_o	<=`DivStop;
+				signed_div_o<=1'b0;
+				stallreq_for_div<=`NoStop;
+			end else begin
+				div_opdata1_o<=`ZeroWord;
+				div_opdata2_o<=`ZeroWord;
+				div_start_o	<=`DivStop;
+				signed_div_o<=1'b0;
+				stallreq_for_div<=`NoStop;
+			end
+		end
+		default: ;
+		endcase
+	end
+end
+//
+
 always @(*) begin
 	if(rst_n==`RstEnable)
 		trapassert<=`TrapNotAssert;
@@ -362,6 +433,10 @@ always @(*) begin
 	endcase
 	
 end
+// 
+always @(*)	begin
+	stallreq	=stallreq_for_madd_msub||stallreq_for_div;
+end
 //MADD, MADDU, MSUB, MSUBU
 always @(*)	begin
 	if(rst_n==`RstEnable) begin
@@ -411,16 +486,18 @@ always @(*)	begin
 		endcase
 	end
 end
-// 
-always @(*)	begin
-	stallreq	=stallreq_for_madd_msub;
-end
+
 // 
 always @(*) begin
 	if(rst_n==`RstEnable) begin
 		whilo_o	<=`WriteDisable;
 		hi_o		<=`ZeroWord;
 		lo_o		<=`ZeroWord;
+	end
+	else if(aluop_i==`EXE_DIV_OP || aluop_i==`EXE_DIVU_OP) begin
+		whilo_o	<=`WriteEnable;
+		hi_o		<=div_result_i[63:32];
+		lo_o		<=div_result_i[31:0];
 	end
 	else if((aluop_i==`EXE_MSUB_OP)||(aluop_i==`EXE_MSUBU_OP)) begin
 		whilo_o	<=`WriteEnable;
