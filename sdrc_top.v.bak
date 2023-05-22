@@ -1,0 +1,27 @@
+module sdrc_top(
+
+);
+
+parameter APP_AW=26;
+parameter APP_DW=32;
+parameter APP_BW=4;
+parameter APP_RW=9;
+
+parameter SDR_DW=16;
+parameter SDR_BW=2;
+parameter dw=32;
+parameter tw=8;
+
+parameter bl=9;
+
+
+wire #(1.0) sdram_pad_clk=sdram_clk;
+
+wb2sdrc 
+#(
+	.dw(dw),
+	.tw(tw),
+	.bl(bl)
+)u_wb2sdrc(
+
+);

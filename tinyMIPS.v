@@ -217,7 +217,7 @@ sdrc_top sdrc_top0(
 	.cfg_sdr_cas	(3'b100),
 	.cfg_sdr_trcar_d(4'b1010),
 	.cfg_sdr_twr_d(4'b0010),
-	.cfg_sdr_rfsh(12'011010011000),
+	.cfg_sdr_rfsh(12'b011010011000),
 	.cfg_sdr_rfmax(3'b100),
 	//
 	.sdr_init_done(sdram_init_done)
